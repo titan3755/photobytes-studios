@@ -126,19 +126,19 @@ function Faqs() {
       title: 'What services do you offer?',
       desc: 'We offer a wide range of digital services, including GFX Design, Motion GFX, Web Design, and writing services.',
       imgSrc:
-        'https://images.unsplash.com/photo-1573495782789-58c6b7c02b80?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1517048676732-d65bc937f952?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170',
     },
     {
       title: 'How long does an order take?',
       desc: 'Delivery times vary based on the project scope. A simple logo may take 2-3 days, while a full website can take several weeks.',
       imgSrc:
-        'https://images.unsplash.com/photo-1486312338219-ce6832f6a443?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1501139083538-0139583c060f?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170',
     },
     {
       title: 'What are your prices?',
       desc: 'Our prices are project-based. Please contact us with your requirements for a custom quote.',
       imgSrc:
-        'https://images.unsplash.com/photo-1586482322416-a41fcb1000b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170',
     },
   ];
 
