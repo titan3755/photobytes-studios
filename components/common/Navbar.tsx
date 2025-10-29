@@ -134,9 +134,23 @@ export default function Navbar() {
               </Link>
             </nav>
 
-            {/* --- Theme Toggle (Desktop) --- */}
+            {/* --- Auth Section (Desktop) --- */}
             <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
               {renderThemeToggle()}
+              {/* --- START: Added Login/Register Buttons --- */}
+              <Link
+                href="/login"
+                className="ml-4 whitespace-nowrap text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="ml-8 whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-rose-600 hover:bg-rose-700"
+              >
+                Register
+              </Link>
+              {/* --- END: Added Login/Register Buttons --- */}
             </div>
           </div>
         </div>
@@ -229,6 +243,28 @@ export default function Navbar() {
                 </Link>
                 {renderMobileThemeToggle()}
               </div>
+
+              {/* --- START: Added Mobile Login/Register Buttons --- */}
+              <div className="space-y-4">
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-rose-600 hover:bg-rose-700"
+                >
+                  Register
+                </Link>
+                <p className="mt-6 text-center text-base font-medium text-gray-500 dark:text-gray-400">
+                  Existing customer?{' '}
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-rose-600 hover:text-rose-500 dark:text-rose-400 dark:hover:text-rose-300"
+                  >
+                    Login
+                  </Link>
+                </p>
+              </div>
+              {/* --- END: Added Mobile Login/Register Buttons --- */}
             </div>
           </div>
         </div>
@@ -236,3 +272,4 @@ export default function Navbar() {
     </>
   );
 }
+
