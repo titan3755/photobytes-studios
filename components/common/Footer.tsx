@@ -42,7 +42,7 @@ export default function Footer() {
                 alt="PhotoBytes Studios logo"
                 width={32}
                 height={32}
-                className="h-8 w-8 rounded-full"
+                className="h-8 w-8 rounded-full bg-black p-1"
                 unoptimized={true}
               />
               <span className="self-center text-2xl font-semibold whitespace-nowrap text-gray-900 dark:text-white">
@@ -50,8 +50,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
-              The official blog for PhotoBytes Studios, covering tech,
-              photography, and development.
+              The official website for PhotoBytes Studios
             </p>
           </div>
           <div className="hidden md:block"></div>
@@ -107,7 +106,7 @@ export default function Footer() {
           <span className="text-sm text-gray-500 sm:text-center dark:text-gray-400">
             © {new Date().getFullYear()}{' '}
             <a
-              href="https://photobytes-reworked.vercel.app/"
+              href="https.photobytes-reworked.vercel.app/"
               className="hover:underline"
             >
               PhotoBytes Studios
