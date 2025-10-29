@@ -109,11 +109,19 @@ export default function Navbar() {
             {/* Desktop Navigation Links */}
             <nav className="hidden md:flex space-x-10">
               <Link
-                href="/privacy"
+                href="/portfolio"
                 className="text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               >
-                Privacy
+                Portfolio
               </Link>
+              <a
+                href="https://photobytes-blog.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
+                Blog
+              </a>
               <Link
                 href="/about"
                 className="text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -199,7 +207,7 @@ export default function Navbar() {
                         strokeWidth={2}
                         d="M6 18L18 6M6 6l12 12"
                       />
-                    </svg>
+D                    </svg>
                   </button>
                 </div>
               </div>
@@ -214,6 +222,29 @@ export default function Navbar() {
                   Home
                 </Link>
                 <Link
+                  href="/portfolio"
+                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Portfolio
+                </Link>
+                <a
+                  href="https://photobytes-blog.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Blog
+                </a>
+                <Link
+                  href="/about"
+                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  About Us
+                </Link>
+                <Link
                   href="/contact"
                   className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
                   onClick={() => setMobileMenuOpen(false)}
@@ -226,20 +257,6 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Order
-                </Link>
-                <Link
-                  href="/about"
-                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  About Us
-                </Link>
-                <Link
-                  href="/privacy"
-                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Privacy
                 </Link>
                 {renderMobileThemeToggle()}
               </div>
@@ -272,4 +289,3 @@ export default function Navbar() {
     </>
   );
 }
-
