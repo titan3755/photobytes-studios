@@ -105,6 +105,8 @@ export default function PortfolioForm({
           <option value="Web Design">Web Design</option>
           <option value="GFX">GFX</option>
           <option value="Motion GFX">Motion GFX</option>
+          <option value="Software Development">Software Development</option>
+          <option value="Other">Other</option>
         </select>
       </div>
 

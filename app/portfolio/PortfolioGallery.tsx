@@ -8,27 +8,47 @@ interface PortfolioGalleryProps {
   items: PortfolioItem[]; // Receive the items as a prop
 }
 
-const categories = ['All', 'Web Design', 'GFX', 'Motion GFX'];
+const categories = [
+  'All',
+  'Web Design',
+  'GFX',
+  'Motion GFX',
+  'Software Development',
+  'Other',
+];
 
 export function PortfolioGallery({ items }: PortfolioGalleryProps) {
   const [filter, setFilter] = useState('All');
 
+  // --- START: MODIFIED FILTER ---
+  // This filter is robust against case and whitespace
   const filteredItems =
     filter === 'All'
-      ? items // Use the 'items' prop here
-      : items.filter((item) => item.category === filter); // And here
+      ? items
+      : items.filter(
+          (item) =>
+            item.category.trim().toLowerCase() === filter.toLowerCase(),
+        );
+  // --- END: MODIFIED FILTER ---
 
   const getCategoryClass = (category: string) => {
-    switch (category) {
-      case 'Web Design':
+    // --- START: MODIFIED SWITCH ---
+    // This switch is now robust against case and whitespace
+    switch (category.trim().toLowerCase()) {
+      case 'web design':
         return 'border-blue-500 bg-blue-50 dark:bg-blue-900/50';
-      case 'GFX':
+      case 'gfx':
         return 'border-red-500 bg-red-50 dark:bg-red-900/50';
-      case 'Motion GFX':
+      case 'motion gfx':
         return 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/50';
+      case 'software development':
+        return 'border-purple-500 bg-purple-50 dark:bg-purple-900/50';
+      case 'other':
+        return 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/50';
       default:
-        return 'border-gray-300';
+        return 'border-gray-300 bg-gray-50 dark:bg-gray-700/50';
     }
+    // --- END: MODIFIED SWITCH ---
   };
 
   return (
@@ -66,7 +86,7 @@ export function PortfolioGallery({ items }: PortfolioGalleryProps) {
               />
             </div>
             <div
-              className={`p-6 border-t-4 ${getCategoryClass(item.category)}`}
+              className={`p-6 border-t-4 h-full ${getCategoryClass(item.category)}`}
             >
               <span
                 className={`inline-block px-3 py-1 text-xs font-semibold rounded-full mb-2 ${getCategoryClass(
