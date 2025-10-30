@@ -5,7 +5,7 @@ import { type Session } from 'next-auth';
 import Image from 'next/image';
 import Link from 'next/link';
 import { deleteUserAccount } from '@/app/actions/userActions';
-import { OrderStatus, Role } from '@prisma/client'; // Import OrderStatus
+import { OrderStatus, Role } from '@prisma/client';
 import {
   User,
   Mail,
@@ -15,6 +15,7 @@ import {
   Loader2,
   ShoppingBag,
   ArrowRight,
+  MessageSquare, // Import Message icon
 } from 'lucide-react';
 import { type DashboardOrder } from './page'; // Import the custom type
 
@@ -152,7 +153,7 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* --- START: Your Orders Card --- */}
+      {/* --- START: Your Orders Card (Modified) --- */}
       <div className="rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -185,8 +186,21 @@ export default function DashboardClient({
                       Ordered on {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="mt-2 sm:mt-0 sm:ml-4 shrink-0">
+                  <div className="mt-2 sm:mt-0 sm:ml-4 shrink-0 flex items-center gap-4">
                     <OrderStatusBadge status={order.status} />
+                    {/* Add Link to message page */}
+                    <Link
+                      href={`/dashboard/orders/${order.id}`}
+                      className="relative inline-flex items-center rounded-md bg-white dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      {/* Unread message count badge */}
+                      {order._count.messages > 0 && (
+                        <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-xs font-bold text-white">
+                          {order._count.messages}
+                        </span>
+                      )}
+                    </Link>
                   </div>
                 </li>
               ))}

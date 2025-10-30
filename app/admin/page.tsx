@@ -6,7 +6,7 @@ import {
   type PortfolioItem,
   type ContactMessage,
   type Order,
-  type User, // --- ADD THIS IMPORT ---
+  type User,
   Role,
   OrderStatus,
 } from '@prisma/client';
@@ -18,7 +18,7 @@ import OrderRowActions from './OrderRowActions';
 import MessageRowActions from './MessageRowActions';
 import PortfolioRowActions from './PortfolioRowActions';
 import { CreatePortfolioButton } from './CreatePortfolioButton';
-import UserRowActions from './UserRowActions'; // --- ADD THIS IMPORT ---
+import UserRowActions from './UserRowActions';
 
 // This is crucial to ensure the page re-fetches data on every navigation
 export const dynamic = 'force-dynamic';
@@ -96,6 +96,14 @@ type PaginatedData = {
   totalPages: number;
 };
 
+// --- Type for Admin Orders (with unread count) ---
+type AdminOrder = Order & {
+  author: { name: string | null } | null;
+  _count: {
+    messages: number;
+  };
+};
+
 // --- Page Component ---
 export default async function AdminPage({
   searchParams,
@@ -107,6 +115,7 @@ export default async function AdminPage({
   if (session?.user?.role !== Role.ADMIN) {
     redirect('/forbidden'); // Redirect non-admins to the 403 page
   }
+  const adminId = session.user.id; // Get admin's ID
 
   // 2. Get current tab and pagination
   const sp = await searchParams;
@@ -118,10 +127,10 @@ export default async function AdminPage({
 
   // 3. Data variables
   let stats: any = {};
-  let allOrders: (Order & { author: { name: string | null } | null })[] = [];
+  let allOrders: AdminOrder[] = []; // Use new type
   let portfolioItems: PortfolioItem[] = [];
   let contactMessages: ContactMessage[] = [];
-  let allUsers: Pick<User, 'id' | 'name' | 'username' | 'email' | 'createdAt' | 'role'>[] = []; // --- ADD THIS LINE ---
+  let allUsers: Pick<User, 'id' | 'name' | 'username' | 'email' | 'createdAt' | 'role'>[] = [];
 
   // 4. Fetch data based on the current tab
   try {
@@ -132,14 +141,14 @@ export default async function AdminPage({
         totalPortfolioItems,
         totalMessages,
         unreadMessages,
-        totalUsers, // --- ADD THIS ---
+        totalUsers,
       ] = await prisma.$transaction([
         prisma.order.count(),
         prisma.order.count({ where: { status: 'PENDING' } }),
         prisma.portfolioItem.count(),
         prisma.contactMessage.count(),
         prisma.contactMessage.count({ where: { isRead: false } }),
-        prisma.user.count(), // --- ADD THIS ---
+        prisma.user.count(),
       ]);
       stats = {
         totalOrders,
@@ -147,19 +156,34 @@ export default async function AdminPage({
         totalPortfolioItems,
         totalMessages,
         unreadMessages,
-        totalUsers, // --- ADD THIS ---
+        totalUsers,
       };
     } else if (currentTab === 'orders') {
       const [orders, totalCount] = await prisma.$transaction([
         prisma.order.findMany({
-          orderBy: { createdAt: 'desc' },
-          include: { author: { select: { name: true } } },
+          orderBy: { updatedAt: 'desc' }, // Order by updatedAt
+          include: {
+            author: { select: { name: true } },
+            // Count messages that are not read by admin AND not sent by an admin
+            _count: {
+              select: {
+                messages: {
+                  where: {
+                    isReadByAdmin: false,
+                    sender: {
+                      role: { not: Role.ADMIN }
+                    }
+                  },
+                },
+              },
+            },
+          },
           take: pageSize,
           skip: skip,
         }),
         prisma.order.count(),
       ]);
-      allOrders = orders;
+      allOrders = orders as AdminOrder[];
       pagination.totalPages = Math.ceil(totalCount / pageSize);
     } else if (currentTab === 'portfolio') {
       const [items, totalCount] = await prisma.$transaction([
@@ -183,7 +207,7 @@ export default async function AdminPage({
       ]);
       contactMessages = messages;
       pagination.totalPages = Math.ceil(totalCount / pageSize);
-    } else if (currentTab === 'users') { // --- ADD THIS ENTIRE BLOCK ---
+    } else if (currentTab === 'users') {
       const [users, totalCount] = await prisma.$transaction([
         prisma.user.findMany({
           orderBy: { createdAt: 'desc' },
@@ -225,7 +249,7 @@ export default async function AdminPage({
           {/* --- HOME TAB --- */}
           {currentTab === 'home' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <StatCard title="Total Users" value={stats.totalUsers} /> {/* --- ADD THIS --- */}
+              <StatCard title="Total Users" value={stats.totalUsers} />
               <StatCard title="Total Orders" value={stats.totalOrders} />
               <StatCard title="Pending Orders" value={stats.pendingOrders} />
               <StatCard
@@ -254,12 +278,6 @@ export default async function AdminPage({
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                       >
-                        Date
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                      >
                         Customer
                       </th>
                       <th
@@ -272,13 +290,13 @@ export default async function AdminPage({
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                       >
-                        Budget
+                        Status
                       </th>
                       <th
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                       >
-                        Status
+                        Messages
                       </th>
                       <th
                         scope="col"
@@ -295,9 +313,6 @@ export default async function AdminPage({
                           key={order.id}
                           className="hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">
                               {order.author?.name || 'N/A'}
@@ -306,11 +321,17 @@ export default async function AdminPage({
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                             {order.category}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {order.budget || 'N/A'}
-                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <OrderStatusBadge status={order.status} />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {order._count.messages > 0 ? (
+                              <span className="font-bold text-rose-500">
+                                {order._count.messages} Unread
+                              </span>
+                            ) : (
+                              'None'
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <OrderRowActions order={order} />
@@ -320,7 +341,7 @@ export default async function AdminPage({
                     ) : (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={5}
                           className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
                         >
                           No orders found.
@@ -391,7 +412,7 @@ export default async function AdminPage({
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                             {item.category}
                           </td>
-                        <td className="px-6 py-4 max-w-sm">
+                          <td className="px-6 py-4 max-w-sm">
                             <Link
                               href={item.imgUrl}
                               target="_blank"
@@ -545,7 +566,7 @@ export default async function AdminPage({
             </div>
           )}
 
-          {/* --- START: USERS TAB --- */}
+          {/* --- USERS TAB --- */}
           {currentTab === 'users' && (
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">
@@ -637,8 +658,6 @@ export default async function AdminPage({
               />
             </div>
           )}
-          {/* --- END: USERS TAB --- */}
-
         </div>
       </div>
     </div>

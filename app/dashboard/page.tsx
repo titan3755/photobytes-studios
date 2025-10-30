@@ -1,8 +1,8 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import DashboardClient from './DashboardClient'; // Import the new Client Component
-import prisma from '@/lib/prisma'; // Import Prisma
-import { OrderStatus, Role } from '@prisma/client'; // Import enums
+import prisma from '@/lib/prisma';
+import { OrderStatus, Role } from '@prisma/client';
 
 // Define the type for the orders we fetch
 export type DashboardOrder = {
@@ -11,6 +11,10 @@ export type DashboardOrder = {
   category: string;
   status: OrderStatus;
   description: string;
+  _count: {
+    // Add unread message count
+    messages: number;
+  };
 };
 
 export default async function DashboardPage() {
@@ -22,16 +26,27 @@ export default async function DashboardPage() {
     redirect('/login?callbackUrl=/dashboard');
   }
 
-  // 3. Fetch the user's 5 most recent orders
+  // 3. Fetch the user's 5 most recent orders AND their unread message count
   const orders: DashboardOrder[] = await prisma.order.findMany({
     where: { authorId: session.user.id },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { updatedAt: 'desc' }, // Order by updatedAt to show active first
     select: {
       id: true,
       createdAt: true,
       category: true,
       status: true,
       description: true,
+      _count: {
+        // Count messages that are not read by the user AND were not sent by the user
+        select: {
+          messages: {
+            where: {
+              isReadByUser: false,
+              senderId: { not: session.user.id },
+            },
+          },
+        },
+      },
     },
     take: 5, // Show 5 most recent
   });
