@@ -61,9 +61,43 @@ export default function Navbar() {
   const navDropdownRef = useRef<HTMLDivElement>(null); // Ref for "More" dropdown
   const userDropdownRef = useRef<HTMLDivElement>(null); // Ref for User dropdown
 
+  // --- START: Added state for scroll ---
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  // --- END: Added state for scroll ---
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // --- START: Effect for scroll ---
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        // Scrolling down and past 100px
+        setIsVisible(false);
+      } else {
+        // Scrolling up
+        setIsVisible(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  // --- END: Effect for scroll ---
+
 
   // --- Effect to handle clicking outside dropdowns ---
   useEffect(() => {
@@ -96,7 +130,7 @@ export default function Navbar() {
     return (
       <button
         type="button"
-        className="ml-4 p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+        className="ml-4 p-2 rounded-full text-gray-500 hover:bg-gray-100/50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/50 dark:hover:text-white"
         aria-label="Toggle dark mode"
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       >
@@ -134,14 +168,22 @@ export default function Navbar() {
   const authPlaceholder = (
     <>
       <div className="ml-4 h-9 w-9 p-2" />
-      <div className="ml-4 h-9 w-20 rounded-md bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
-      <div className="ml-4 h-9 w-24 rounded-md bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+      <div className="ml-4 h-9 w-20 rounded-md bg-gray-200/50 dark:bg-gray-700/50 animate-pulse"></div>
+      <div className="ml-4 h-9 w-24 rounded-md bg-gray-200/50 dark:bg-gray-700/50 animate-pulse"></div>
     </>
   );
 
   return (
     <>
-      <div className="relative bg-white dark:bg-gray-900 border-b-2 border-gray-100 dark:border-gray-800 z-50 transition-colors duration-200">
+      {/* --- START: Modified for Glass Effect & Hide on Scroll --- */}
+      <div 
+        className={classNames(
+          'sticky top-0 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg z-50 duration-300 border-b border-gray-100/50 dark:border-gray-800/50',
+          isVisible ? 'translate-y-0' : '-translate-y-full'
+          // We add 'duration-300' and 'translate-y' classes for the animation
+        )}
+      >
+      {/* --- END: Modified for Glass Effect & Hide on Scroll --- */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex justify-between items-center py-6 md:justify-start md:space-x-10">
             <div className="flex justify-start lg:w-0 lg:flex-1">
@@ -165,7 +207,7 @@ export default function Navbar() {
             <div className="-mr-2 -my-2 md:hidden">
               <button
                 type="button"
-                className="bg-white dark:bg-gray-900 rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600"
+                className="bg-transparent rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600"
                 onClick={() => setMobileMenuOpen(true)}
               >
                 <span className="sr-only">Open menu</span>
@@ -290,7 +332,7 @@ export default function Navbar() {
                   <div className="relative ml-4" ref={userDropdownRef}>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-x-2.5 rounded-md bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="inline-flex items-center gap-x-2.5 rounded-md bg-white/50 dark:bg-gray-900/50 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
                       onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                     >
                       <UserAvatar user={session.user} size="small" />
@@ -372,7 +414,9 @@ export default function Navbar() {
               : 'duration-100 ease-in opacity-0 scale-95 pointer-events-none',
           )}
         >
-          <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 bg-white dark:bg-gray-800 divide-y-2 divide-gray-50 dark:divide-gray-700">
+          {/* --- START: Modified for Glass Effect (Mobile) --- */}
+          <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md divide-y-2 divide-gray-50 dark:divide-gray-700">
+          {/* --- END: Modified for Glass Effect (Mobile) --- */}
             <div className="pt-5 pb-6 px-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
