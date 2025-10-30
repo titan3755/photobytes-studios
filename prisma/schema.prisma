@@ -227,3 +227,9 @@ model PortfolioItem {
 
   @@index([category])
 }
+
+model NewsletterSubscription {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}

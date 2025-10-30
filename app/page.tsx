@@ -1,50 +1,51 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Benefits } from '@/components/home/Benefits';
-import { AnimatedSection } from '@/components/home/AnimatedSection'; // Import the new animation component
+import { AnimatedSection } from '@/components/home/AnimatedSection';
+import { Newsletter } from '@/components/home/Newsletter';
+import { auth } from '@/auth'; // <-- 1. IMPORT AUTH
 
 // --- 1. Hero Section ---
-// Rebuilt from Hero.jsx
+// (Your existing Hero component code is here...)
 function Hero() {
   return (
-    <div className="bg-white dark:bg-gray-900 shadow-lg">
-      <div className="container mx-auto flex flex-col-reverse lg:flex-row items-center">
-        {/* Text content takes 50% width on large screens */}
-        <div className="flex flex-col justify-center p-10 lg:p-20 lg:w-1/2">
-          <h1 className="text-4xl lg:text-5xl font-bold lg:font-extrabold text-center lg:text-left text-black dark:text-white">
-            Welcome to{' '}
-            <span className="text-rose-500">PhotoBytes Studios</span>
+    // The main container is now relative and has a fixed height
+    <div className="relative h-[600px] w-full overflow-hidden">
+      {/* Background Image - Added contrast-125 */}
+      <Image
+        src="https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2155"
+        className="object-cover brightness-75 contrast-125" // Dim image for text readability
+        fill
+        priority
+        alt="Abstract design setup"
+      />
+      {/* Overlay for text content - Added ring-1 ring-white/20 */}
+      <div className="absolute inset-0 flex items-center justify-center p-6 backdrop-blur-md bg-white/10 dark:bg-gray-900/10 ring-1 ring-inset ring-white/20">
+        {/* Inner container for text alignment and max-width */}
+        <div className="mx-auto max-w-2xl text-center">
+          <h1 className="text-4xl lg:text-5xl font-bold lg:font-extrabold text-white">
+            Welcome to <span className="text-rose-400">PhotoBytes Studios</span>
           </h1>
-          <p className="font-medium text-slate-600 dark:text-slate-400 text-base lg:text-lg mt-8 w-auto text-center lg:text-left">
+          <p className="font-medium text-slate-200 text-base lg:text-lg mt-8">
             We provide online services. GFX Design, Web Design, Motion GFX, and
             writing services are available from PhotoBytes Studios. To view all
             our services, visit the order page or if you got any enquiries,
             feel free to contact us.
           </p>
-          <div className="flex flex-row items-center justify-center lg:justify-start mt-10 gap-4">
+          <div className="flex flex-row items-center justify-center mt-10 gap-4">
             <Link
               href="/order"
-              className="p-3 text-center rounded shadow-xl w-[140px] font-semibold text-xl text-white bg-rose-600 hover:bg-rose-700 transition-colors"
+              className="p-3 text-center rounded shadow-xl w-[140px] font-semibold text-xl text-white bg-rose-600 hover:bg-rose-700 transition-all duration-300 hover:scale-105"
             >
               Order
             </Link>
             <Link
               href="/contact"
-              className="p-3 text-center rounded w-[140px] font-semibold text-rose-600 text-xl bg-rose-100 hover:bg-rose-200 dark:bg-gray-800 dark:text-rose-400 dark:hover:bg-gray-700 transition-colors"
+              className="p-3 text-center rounded w-[140px] font-semibold text-white text-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 hover:scale-105 ring-1 ring-white/20"
             >
               Contact
             </Link>
           </div>
-        </div>
-        {/* Image content takes 50% width on large screens */}
-        <div className="relative w-full h-[400px] lg:w-1/2 lg:h-[600px]">
-          <Image
-            src="https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2155"
-            className="object-cover"
-            fill
-            priority
-            alt="Abstract design setup"
-          />
         </div>
       </div>
     </div>
@@ -52,6 +53,7 @@ function Hero() {
 }
 
 // --- 2. Services Section ---
+// (Your existing Services component code is here...)
 function Services() {
   // Mock data for serviceCards
   const serviceCards = [
@@ -131,6 +133,7 @@ function Services() {
 }
 
 // --- 3. Features Section ---
+// (Your existing Features component code is here...)
 function Features() {
   // Mock data for featureCards
   const featureCards = [
@@ -193,41 +196,13 @@ function Features() {
   );
 }
 
-// --- 5. Newsletter Section ---
-function Newsletter() {
-  return (
-    <div className="w-full p-10 bg-slate-100 dark:bg-gray-800">
-      <div className="container mx-auto max-w-3xl h-[400px] flex flex-col items-center justify-center">
-        <h2 className="text-center mx-auto text-4xl md:text-5xl font-bold md:font-extrabold text-black dark:text-white mt-10">
-          Subscribe to our newsletter!
-        </h2>
-        <p className="text-center mx-auto text-base md:text-lg font-normal text-slate-500 dark:text-slate-400 my-4">
-          Want to receive news about our products? You can subscribe to our
-          newsletter!
-        </p>
-        {/* Visual-only form */}
-        <form className="flex flex-row items-center justify-center mt-6 mb-16">
-          <input
-            type="email"
-            className="w-[300px] border-2 text-black dark:text-white border-black dark:border-gray-500 bg-white dark:bg-gray-700 p-3 rounded-l-md"
-            placeholder="Your email address"
-            required
-          />
-          <button
-            type="button"
-            disabled
-            className="p-3 w-[100px] rounded-r-md bg-black dark:bg-gray-600 text-white font-medium opacity-60 cursor-not-allowed"
-          >
-            Submit
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 // --- Main Home Page ---
-export default function HomePage() {
+export default async function HomePage() { // --- 2. MAKE PAGE ASYNC ---
+  
+  // --- 3. GET SESSION ON SERVER ---
+  const session = await auth();
+  
   return (
     <main className="bg-white dark:bg-gray-900">
       <Hero />
@@ -247,7 +222,8 @@ export default function HomePage() {
       </AnimatedSection>
       
       <AnimatedSection>
-        <Newsletter />
+        {/* --- 4. PASS EMAIL AS PROP --- */}
+        <Newsletter userEmail={session?.user?.email} />
       </AnimatedSection>
     </main>
   );
