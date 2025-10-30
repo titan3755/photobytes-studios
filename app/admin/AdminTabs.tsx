@@ -5,7 +5,7 @@ import {
   LayoutDashboard,
   FileText,
   MessageSquare,
-  Users,
+  Users, // Import the Users icon
   Image as ImageIcon,
 } from 'lucide-react';
 
@@ -15,6 +15,7 @@ const tabs = [
   { name: 'Orders', href: 'orders', icon: FileText },
   { name: 'Portfolio', href: 'portfolio', icon: ImageIcon },
   { name: 'Messages', href: 'messages', icon: MessageSquare },
+  { name: 'Users', href: 'users', icon: Users }, // --- ADD THIS LINE ---
 ];
 
 function classNames(...classes: string[]) {
@@ -32,7 +33,7 @@ export default function AdminTabs() {
     const params = new URLSearchParams(searchParams);
     params.set('tab', tabHref);
     params.delete('page'); // Reset page to 1 when switching tabs
-    
+
     // --- THIS IS THE FIX ---
     // Use router.push() to trigger a re-render of the Server Component
     router.push(`${pathname}?${params.toString()}`);

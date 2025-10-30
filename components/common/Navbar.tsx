@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, ChevronDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useSession, signOut } from 'next-auth/react'; // Import auth hooks
+import { useSession, signOut } from 'next-auth/react';
+import { Role } from '@prisma/client'; // Import Role enum
 
 function classNames(...classes: string[]): string {
   return classes.filter(Boolean).join(' ');
@@ -367,7 +368,17 @@ export default function Navbar() {
                           >
                             Dashboard
                           </Link>
-                          {/* Add other links like Profile here if needed */}
+                          {/* --- START: Admin Link --- */}
+                          {session.user.role === Role.ADMIN && (
+                            <Link
+                              href="/admin"
+                              className="block px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              onClick={() => setUserDropdownOpen(false)}
+                            >
+                              Admin Panel
+                            </Link>
+                          )}
+                          {/* --- END: Admin Link --- */}
                           <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                           <button
                             onClick={() => {
@@ -416,7 +427,7 @@ export default function Navbar() {
         >
           {/* --- START: Modified for Glass Effect (Mobile) --- */}
           <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md divide-y-2 divide-gray-50 dark:divide-gray-700">
-          {/* --- END: Modified for Glass Effect (Mobile) --- */}
+            {/* --- END: Modified for Glass Effect (Mobile) --- */}
             <div className="pt-5 pb-6 px-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -525,6 +536,17 @@ export default function Navbar() {
                     >
                       Dashboard
                     </Link>
+                    {/* --- START: Admin Link (Mobile) --- */}
+                    {session.user.role === Role.ADMIN && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-red-600 hover:bg-red-700"
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
+                    {/* --- END: Admin Link (Mobile) --- */}
                     <p className="mt-6 text-center text-base font-medium text-gray-500 dark:text-gray-400">
                       Welcome, {session.user.username}!{' '}
                       <button

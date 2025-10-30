@@ -6,6 +6,7 @@ import {
   type PortfolioItem,
   type ContactMessage,
   type Order,
+  type User, // --- ADD THIS IMPORT ---
   Role,
   OrderStatus,
 } from '@prisma/client';
@@ -16,7 +17,11 @@ import AdminPagination from './AdminPagination';
 import OrderRowActions from './OrderRowActions';
 import MessageRowActions from './MessageRowActions';
 import PortfolioRowActions from './PortfolioRowActions';
-import { CreatePortfolioButton } from './CreatePortfolioButton'; // We will create this
+import { CreatePortfolioButton } from './CreatePortfolioButton';
+import UserRowActions from './UserRowActions'; // --- ADD THIS IMPORT ---
+
+// This is crucial to ensure the page re-fetches data on every navigation
+export const dynamic = 'force-dynamic';
 
 // --- Helper: Stat Card ---
 function StatCard({ title, value }: { title: string; value: number | string }) {
@@ -62,6 +67,35 @@ function OrderStatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
+// --- Helper: Role Badge ---
+function RoleBadge({ role }: { role: Role }) {
+  let colors = '';
+  switch (role) {
+    case 'ADMIN':
+      colors = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      break;
+    case 'BLOGGER':
+      colors = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      break;
+    case 'USER':
+    default:
+      colors = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+  }
+  return (
+    <span
+      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colors}`}
+    >
+      {role}
+    </span>
+  );
+}
+
+// Define the shape of our paginated data
+type PaginatedData = {
+  currentPage: number;
+  totalPages: number;
+};
+
 // --- Page Component ---
 export default async function AdminPage({
   searchParams,
@@ -80,13 +114,14 @@ export default async function AdminPage({
   const currentPage = Number(sp.page) || 1;
   const pageSize = 10;
   const skip = (currentPage - 1) * pageSize;
-  let pagination = { currentPage: 1, totalPages: 1 };
+  let pagination: PaginatedData = { currentPage: 1, totalPages: 1 };
 
   // 3. Data variables
   let stats: any = {};
   let allOrders: (Order & { author: { name: string | null } | null })[] = [];
   let portfolioItems: PortfolioItem[] = [];
   let contactMessages: ContactMessage[] = [];
+  let allUsers: Pick<User, 'id' | 'name' | 'username' | 'email' | 'createdAt' | 'role'>[] = []; // --- ADD THIS LINE ---
 
   // 4. Fetch data based on the current tab
   try {
@@ -97,12 +132,14 @@ export default async function AdminPage({
         totalPortfolioItems,
         totalMessages,
         unreadMessages,
+        totalUsers, // --- ADD THIS ---
       ] = await prisma.$transaction([
         prisma.order.count(),
         prisma.order.count({ where: { status: 'PENDING' } }),
         prisma.portfolioItem.count(),
         prisma.contactMessage.count(),
         prisma.contactMessage.count({ where: { isRead: false } }),
+        prisma.user.count(), // --- ADD THIS ---
       ]);
       stats = {
         totalOrders,
@@ -110,6 +147,7 @@ export default async function AdminPage({
         totalPortfolioItems,
         totalMessages,
         unreadMessages,
+        totalUsers, // --- ADD THIS ---
       };
     } else if (currentTab === 'orders') {
       const [orders, totalCount] = await prisma.$transaction([
@@ -145,12 +183,31 @@ export default async function AdminPage({
       ]);
       contactMessages = messages;
       pagination.totalPages = Math.ceil(totalCount / pageSize);
+    } else if (currentTab === 'users') { // --- ADD THIS ENTIRE BLOCK ---
+      const [users, totalCount] = await prisma.$transaction([
+        prisma.user.findMany({
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            email: true,
+            createdAt: true,
+            role: true,
+          },
+          take: pageSize,
+          skip: skip,
+        }),
+        prisma.user.count(),
+      ]);
+      allUsers = users;
+      pagination.totalPages = Math.ceil(totalCount / pageSize);
     }
   } catch (error) {
     console.error('Failed to fetch admin data:', error);
     // You could render an error state here
   }
-  
+
   pagination.currentPage = currentPage;
 
   // --- 5. Render Page ---
@@ -168,6 +225,7 @@ export default async function AdminPage({
           {/* --- HOME TAB --- */}
           {currentTab === 'home' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <StatCard title="Total Users" value={stats.totalUsers} /> {/* --- ADD THIS --- */}
               <StatCard title="Total Orders" value={stats.totalOrders} />
               <StatCard title="Pending Orders" value={stats.pendingOrders} />
               <StatCard
@@ -486,6 +544,101 @@ export default async function AdminPage({
               />
             </div>
           )}
+
+          {/* --- START: USERS TAB --- */}
+          {currentTab === 'users' && (
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">
+                User Management
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                      >
+                        Name
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                      >
+                        Email
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                      >
+                        Joined
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                      >
+                        Role
+                      </th>
+                      <th
+                        scope="col"
+                        className="relative px-6 py-3 text-right"
+                      >
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {allUsers.length > 0 ? (
+                      allUsers.map((user) => (
+                        <tr
+                          key={user.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {user.name || user.username || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {user.email || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(user.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <RoleBadge role={user.role} />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <UserRowActions
+                              user={user}
+                              currentAdminId={session.user.id}
+                            />
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
+                        >
+                          No users found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <AdminPagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+              />
+            </div>
+          )}
+          {/* --- END: USERS TAB --- */}
+
         </div>
       </div>
     </div>

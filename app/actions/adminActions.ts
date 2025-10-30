@@ -21,6 +21,7 @@ async function checkAdminAuth() {
   if (session?.user?.role !== Role.ADMIN) {
     throw new Error('Unauthorized: Admin access required.');
   }
+  return session; // Return session for convenience
 }
 
 // --- Zod Schema for Portfolio Validation ---
@@ -36,10 +37,8 @@ const portfolioSchema = z.object({
 // ===================================
 // PORTFOLIO ACTIONS
 // ===================================
-
-/**
- * Creates a new portfolio item.
- */
+// (Your existing create, update, delete portfolio actions are here)
+// ...
 export async function createPortfolioItem(
   formData: FormData,
 ): Promise<FormResponse> {
@@ -66,9 +65,6 @@ export async function createPortfolioItem(
   }
 }
 
-/**
- * Updates an existing portfolio item.
- */
 export async function updatePortfolioItem(
   itemId: string,
   formData: FormData,
@@ -97,9 +93,6 @@ export async function updatePortfolioItem(
   }
 }
 
-/**
- * Deletes a portfolio item.
- */
 export async function deletePortfolioItem(itemId: string): Promise<FormResponse> {
   try {
     await checkAdminAuth();
@@ -119,10 +112,8 @@ export async function deletePortfolioItem(itemId: string): Promise<FormResponse>
 // ===================================
 // ORDER ACTIONS
 // ===================================
-
-/**
- * Updates the status of an order.
- */
+// (Your existing order status action is here)
+// ...
 export async function updateOrderStatus(
   orderId: string,
   status: OrderStatus,
@@ -145,10 +136,8 @@ export async function updateOrderStatus(
 // ===================================
 // CONTACT MESSAGE ACTIONS
 // ===================================
-
-/**
- * Marks a contact message as read.
- */
+// (Your existing message actions are here)
+// ...
 export async function markMessageAsRead(messageId: string): Promise<FormResponse> {
   try {
     await checkAdminAuth();
@@ -165,9 +154,6 @@ export async function markMessageAsRead(messageId: string): Promise<FormResponse
   }
 }
 
-/**
- * Deletes a contact message.
- */
 export async function deleteMessage(messageId: string): Promise<FormResponse> {
   try {
     await checkAdminAuth();
@@ -178,6 +164,60 @@ export async function deleteMessage(messageId: string): Promise<FormResponse> {
 
     revalidatePath('/admin');
     return { success: true, message: 'Message deleted.' };
+  } catch (error) {
+    return { success: false, message: (error as Error).message };
+  }
+}
+
+// ===================================
+// --- NEW USER ACTIONS ---
+// ===================================
+
+/**
+ * Updates a user's role.
+ */
+export async function updateUserRole(
+  userId: string,
+  role: Role,
+): Promise<FormResponse> {
+  try {
+    const session = await checkAdminAuth();
+
+    // Prevent admin from changing their own role
+    if (session.user.id === userId) {
+      return { success: false, message: "You cannot change your own role." };
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { role: role },
+    });
+
+    revalidatePath('/admin?tab=users');
+    return { success: true, message: 'User role updated.' };
+  } catch (error) {
+    return { success: false, message: (error as Error).message };
+  }
+}
+
+/**
+ * Deletes a user.
+ */
+export async function deleteUser(userId: string): Promise<FormResponse> {
+  try {
+    const session = await checkAdminAuth();
+
+    // Prevent admin from deleting themself
+    if (session.user.id === userId) {
+      return { success: false, message: "You cannot delete your own account." };
+    }
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    revalidatePath('/admin?tab=users');
+    return { success: true, message: 'User deleted.' };
   } catch (error) {
     return { success: false, message: (error as Error).message };
   }
