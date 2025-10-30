@@ -1,14 +1,22 @@
 import { PrismaClient } from '@prisma/client';
+import { withAccelerate } from '@prisma/extension-accelerate';
 
-// Declare a global variable to hold the Prisma Client instance
+// 1. Create a function that returns the extended client
+const prismaClientSingleton = () => {
+  return new PrismaClient().$extends(withAccelerate());
+};
+
+// 2. Infer the type of this extended client
+type PrismaClientExtended = ReturnType<typeof prismaClientSingleton>;
+
+// 3. Use this new extended type in your global declaration
 declare global {
-  var prisma: PrismaClient | undefined;
+  var prisma: PrismaClientExtended | undefined;
 }
 
-// Initialize Prisma Client
-const prisma = global.prisma || new PrismaClient();
+// 4. Use the singleton function to create the client
+const prisma = global.prisma ?? prismaClientSingleton();
 
-// In development, store the instance on the global object
 if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma;
 }
