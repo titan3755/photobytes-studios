@@ -391,12 +391,12 @@ export default async function AdminPage({
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                             {item.category}
                           </td>
-                          <td className="px-6 py-4 max-w-sm">
+                        <td className="px-6 py-4 max-w-sm">
                             <Link
                               href={item.imgUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-blue-600 dark:text-blue-400 hover:underline truncate"
+                              className="text-sm text-blue-600 dark:text-blue-400 hover:underline truncate block"
                             >
                               {item.imgUrl}
                             </Link>
