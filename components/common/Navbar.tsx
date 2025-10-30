@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
-import { Moon, Sun } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Moon, Sun, ChevronDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 function classNames(...classes: string[]): string {
@@ -12,12 +12,32 @@ function classNames(...classes: string[]): string {
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false); // State for the new dropdown
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const dropdownRef = useRef<HTMLDivElement>(null); // Ref for dropdown click outside
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // --- Effect to handle clicking outside the dropdown ---
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   const renderThemeToggle = () => {
     if (!mounted) {
@@ -109,20 +129,6 @@ export default function Navbar() {
             {/* Desktop Navigation Links */}
             <nav className="hidden md:flex space-x-10">
               <Link
-                href="/portfolio"
-                className="text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              >
-                Portfolio
-              </Link>
-              <a
-                href="https://photobytes-blog.vercel.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              >
-                Blog
-              </a>
-              <Link
                 href="/about"
                 className="text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               >
@@ -140,12 +146,83 @@ export default function Navbar() {
               >
                 Order
               </Link>
+
+              {/* --- START: More Dropdown --- */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-x-1 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                >
+                  <span>More</span>
+                  <ChevronDown
+                    className={classNames(
+                      dropdownOpen ? 'transform rotate-180' : '',
+                      'h-5 w-5 transition-transform duration-200',
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute -ml-4 mt-3 w-60 transform px-2 sm:px-0 lg:ml-0 lg:left-1/2 lg:-translate-x-1/2">
+                    <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden">
+                      <div className="relative grid gap-6 bg-white dark:bg-gray-800 px-5 py-6 sm:gap-8 sm:p-8">
+                        <Link
+                          href="/portfolio"
+                          className="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <div className="ml-4">
+                            <p className="text-base font-medium text-gray-900 dark:text-white">
+                              Portfolio
+                            </p>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                              See our past work.
+                            </p>
+                          </div>
+                        </Link>
+                        <a
+                          href="https://photobytes-blog.vercel.app/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <div className="ml-4">
+                            <p className="text-base font-medium text-gray-900 dark:text-white">
+                              Blog
+                            </p>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                              Read our latest articles.
+                            </p>
+                          </div>
+                        </a>
+                        <Link
+                          href="/services"
+                          className="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <div className="ml-4">
+                            <p className="text-base font-medium text-gray-900 dark:text-white">
+                              Services
+                            </p>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                              What we offer.
+                            </p>
+                          </div>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* --- END: More Dropdown --- */}
             </nav>
 
             {/* --- Auth Section (Desktop) --- */}
             <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
               {renderThemeToggle()}
-              {/* --- START: Added Login/Register Buttons --- */}
               <Link
                 href="/login"
                 className="ml-4 whitespace-nowrap text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -158,7 +235,6 @@ export default function Navbar() {
               >
                 Register
               </Link>
-              {/* --- END: Added Login/Register Buttons --- */}
             </div>
           </div>
         </div>
@@ -207,7 +283,7 @@ export default function Navbar() {
                         strokeWidth={2}
                         d="M6 18L18 6M6 6l12 12"
                       />
-D                    </svg>
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -221,22 +297,6 @@ D                    </svg>
                 >
                   Home
                 </Link>
-                <Link
-                  href="/portfolio"
-                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Portfolio
-                </Link>
-                <a
-                  href="https://photobytes-blog.vercel.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Blog
-                </a>
                 <Link
                   href="/about"
                   className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
@@ -258,10 +318,36 @@ D                    </svg>
                 >
                   Order
                 </Link>
+
+                {/* --- START: Mobile More Links --- */}
+                <Link
+                  href="/portfolio"
+                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Portfolio
+                </Link>
+                <a
+                  href="https://photobytes-blog.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Blog
+                </a>
+                <Link
+                  href="/services"
+                  className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Services
+                </Link>
+                {/* --- END: Mobile More Links --- */}
+
                 {renderMobileThemeToggle()}
               </div>
 
-              {/* --- START: Added Mobile Login/Register Buttons --- */}
               <div className="space-y-4">
                 <Link
                   href="/register"
@@ -281,7 +367,6 @@ D                    </svg>
                   </Link>
                 </p>
               </div>
-              {/* --- END: Added Mobile Login/Register Buttons --- */}
             </div>
           </div>
         </div>

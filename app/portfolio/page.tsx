@@ -76,13 +76,23 @@ export default function PortfolioPage() {
 
   return (
     <main className="bg-white dark:bg-gray-900">
-      {/* --- 1. Hero Section --- */}
-      <div className="relative bg-gray-50 dark:bg-gray-800 py-24 sm:py-32">
-        <div className="container mx-auto max-w-7xl px-6 lg:px-8 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl">
+      {/* --- 1. Hero Section (MODIFIED) --- */}
+      <div className="relative h-[500px] lg:h-[700px] w-full">
+        {/* Background Image */}
+        <Image
+          src="https://images.unsplash.com/photo-1754738381739-5efb94a4525b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1964"
+          alt="Our Portfolio"
+          layout="fill"
+          objectFit="cover"
+          className="brightness-50"
+          priority
+        />
+        {/* Overlay Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-6">
+          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
             Our Work
           </h1>
-          <p className="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="mt-6 text-lg leading-8 text-gray-200 max-w-2xl mx-auto">
             We take pride in our work. Browse our curated collection of
             projects, from stunning websites to eye-catching graphics and
             animations.
