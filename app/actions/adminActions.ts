@@ -4,7 +4,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
-import { OrderStatus, Role } from '@prisma/client';
+import { OrderStatus, Role, ServiceName, OperationalStatus } from '@prisma/client'; // Add new imports
 
 // --- Reusable Type for Server Action Responses ---
 type FormResponse = {
@@ -218,6 +218,30 @@ export async function deleteUser(userId: string): Promise<FormResponse> {
 
     revalidatePath('/admin?tab=users');
     return { success: true, message: 'User deleted.' };
+  } catch (error) {
+    return { success: false, message: (error as Error).message };
+  }
+}
+
+// ===================================
+// --- NEW SERVICE STATUS ACTIONS ---
+// ===================================
+
+export async function updateServiceStatus(
+  serviceName: ServiceName,
+  status: OperationalStatus,
+): Promise<{ success: boolean; message: string }> {
+  try {
+    await checkAdminAuth(); // Secure the action
+
+    await prisma.serviceStatus.update({
+      where: { serviceName },
+      data: { status },
+    });
+
+    revalidatePath('/admin'); // Revalidate admin page
+    revalidatePath('/status'); // Revalidate public status page
+    return { success: true, message: 'Status updated successfully.' };
   } catch (error) {
     return { success: false, message: (error as Error).message };
   }

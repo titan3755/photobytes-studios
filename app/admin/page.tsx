@@ -7,6 +7,9 @@ import {
   type ContactMessage,
   type Order,
   type User,
+  type ServiceStatus,
+  ServiceName, // --- ADD THIS ---
+  OperationalStatus,
   Role,
   OrderStatus,
 } from '@prisma/client';
@@ -19,6 +22,7 @@ import MessageRowActions from './MessageRowActions';
 import PortfolioRowActions from './PortfolioRowActions';
 import { CreatePortfolioButton } from './CreatePortfolioButton';
 import UserRowActions from './UserRowActions';
+import StatusManager from './SiteStatus';
 
 // This is crucial to ensure the page re-fetches data on every navigation
 export const dynamic = 'force-dynamic';
@@ -131,6 +135,7 @@ export default async function AdminPage({
   let portfolioItems: PortfolioItem[] = [];
   let contactMessages: ContactMessage[] = [];
   let allUsers: Pick<User, 'id' | 'name' | 'username' | 'email' | 'createdAt' | 'role'>[] = [];
+  let serviceStatuses: ServiceStatus[] = [];
 
   // 4. Fetch data based on the current tab
   try {
@@ -226,6 +231,23 @@ export default async function AdminPage({
       ]);
       allUsers = users;
       pagination.totalPages = Math.ceil(totalCount / pageSize);
+    }
+    else if (currentTab === 'status') { // --- ADD THIS BLOCK ---
+      
+      // Seed the statuses if they don't exist
+      await prisma.serviceStatus.upsert({
+        where: { serviceName: ServiceName.STUDIOS },
+        update: {},
+        create: { serviceName: ServiceName.STUDIOS, status: OperationalStatus.OPERATIONAL },
+      });
+      await prisma.serviceStatus.upsert({
+        where: { serviceName: ServiceName.BLOG },
+        update: {},
+        create: { serviceName: ServiceName.BLOG, status: OperationalStatus.OPERATIONAL },
+      });
+
+      // Fetch all statuses
+      serviceStatuses = await prisma.serviceStatus.findMany();
     }
   } catch (error) {
     console.error('Failed to fetch admin data:', error);
@@ -658,6 +680,17 @@ export default async function AdminPage({
               />
             </div>
           )}
+
+          {/* --- STATUS TAB --- */}
+          {currentTab === 'status' && (
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">
+                Service Status Management
+              </h2>
+              <StatusManager services={serviceStatuses} />
+            </div>
+          )}
+          {/* --- END OF TABS CONTENT --- */}
         </div>
       </div>
     </div>

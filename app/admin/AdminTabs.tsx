@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Users, // Import the Users icon
   Image as ImageIcon,
+  ShieldCheck,
 } from 'lucide-react';
 
 // --- Define the tabs for your admin panel ---
@@ -15,7 +16,8 @@ const tabs = [
   { name: 'Orders', href: 'orders', icon: FileText },
   { name: 'Portfolio', href: 'portfolio', icon: ImageIcon },
   { name: 'Messages', href: 'messages', icon: MessageSquare },
-  { name: 'Users', href: 'users', icon: Users }, // --- ADD THIS LINE ---
+  { name: 'Users', href: 'users', icon: Users },
+  { name: 'Status', href: 'status', icon: ShieldCheck }, // --- ADD THIS LINE ---
 ];
 
 function classNames(...classes: string[]) {

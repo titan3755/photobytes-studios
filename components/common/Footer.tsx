@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import prisma from '@/lib/prisma'; // 1. Import Prisma
+import { OperationalStatus } from '@prisma/client'; // 2. Import Status Enum
 
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -27,10 +29,72 @@ const TwitterIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-export default function Footer() {
+// --- 3. NEW HELPER COMPONENT for the live indicator ---
+function LiveStatusIndicator({ status }: { status: OperationalStatus }) {
+  let colorClass = 'bg-gray-400';
+  let pulseClass = '';
+  let title = 'Status Unknown';
+
+  switch (status) {
+    case OperationalStatus.OPERATIONAL:
+      colorClass = 'bg-green-500';
+      title = 'All systems operational';
+      break;
+    case OperationalStatus.MAINTENANCE:
+      colorClass = 'bg-yellow-500';
+      pulseClass = 'animate-pulse';
+      title = 'Services are under maintenance';
+      break;
+    case OperationalStatus.DOWN:
+      colorClass = 'bg-red-500';
+      pulseClass = 'animate-pulse';
+      title = 'One or more services are down';
+      break;
+  }
+
+  return (
+    <div className="relative flex h-3 w-3" title={title}>
+      {pulseClass && (
+        <span
+          className={`absolute inline-flex h-full w-full rounded-full ${colorClass} ${pulseClass} opacity-75`}
+        />
+      )}
+      <span
+        className={`relative inline-flex rounded-full h-3 w-3 ${colorClass}`}
+      />
+    </div>
+  );
+}
+
+// --- 4. NEW DATA FETCHING FUNCTION ---
+async function getOverallStatus() {
+  try {
+    const statuses = await prisma.serviceStatus.findMany();
+    if (!statuses || statuses.length === 0) {
+      return OperationalStatus.OPERATIONAL; // Default to operational
+    }
+
+    if (statuses.some((s) => s.status === OperationalStatus.DOWN)) {
+      return OperationalStatus.DOWN;
+    }
+    if (statuses.some((s) => s.status === OperationalStatus.MAINTENANCE)) {
+      return OperationalStatus.MAINTENANCE;
+    }
+    return OperationalStatus.OPERATIONAL;
+  } catch (error) {
+    console.error('Failed to fetch status for footer:', error);
+    return OperationalStatus.OPERATIONAL; // Default to operational on error
+  }
+}
+
+// --- 5. Make Footer component ASYNC ---
+export default async function Footer() {
+  // --- 6. Fetch the status ---
+  const overallStatus = await getOverallStatus();
+
   return (
     <footer className="bg-gray-100 dark:bg-gray-900">
-      <div className="max-w-screen mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="md:grid md:grid-cols-4 md:gap-8">
           <div className="space-y-4">
             <Link
@@ -53,7 +117,26 @@ export default function Footer() {
               The official website for PhotoBytes Studios
             </p>
           </div>
-          <div className="hidden md:block"></div>
+          
+          {/* --- START: Modified Section --- */}
+          <div className="mt-10 md:mt-0">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+              Ecosystem Status
+            </h3>
+            <ul className="mt-4 space-y-4">
+              <li>
+                <Link
+                  href="/status"
+                  className="flex items-center gap-2 text-base text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                >
+                  <LiveStatusIndicator status={overallStatus} />
+                  <span>Status</span>
+                </Link>
+              </li>
+            </ul>
+          </div>
+          {/* --- END: Modified Section --- */}
+
           <div className="mt-10 md:mt-0">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
               Resources
@@ -75,6 +158,7 @@ export default function Footer() {
                   Contact
                 </Link>
               </li>
+              {/* Status link removed from here */}
             </ul>
           </div>
 

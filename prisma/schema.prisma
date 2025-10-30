@@ -233,3 +233,22 @@ model NewsletterSubscription {
   email     String   @unique
   createdAt DateTime @default(now())
 }
+
+enum ServiceName {
+  STUDIOS
+  BLOG
+}
+
+enum OperationalStatus {
+  OPERATIONAL
+  MAINTENANCE
+  DOWN
+}
+
+// Add this new model
+model ServiceStatus {
+  id          String            @id @default(cuid())
+  serviceName ServiceName       @unique // e.g., STUDIOS or BLOG
+  status      OperationalStatus @default(OPERATIONAL)
+  updatedAt   DateTime          @updatedAt
+}
