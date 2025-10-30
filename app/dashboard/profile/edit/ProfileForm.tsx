@@ -7,6 +7,7 @@ import {
   updateUserPassword,
 } from '@/app/actions/userActions';
 import { Loader2 } from 'lucide-react';
+import { useSession } from 'next-auth/react'; // --- 1. Import useSession ---
 
 interface ProfileFormProps {
   user: User;
@@ -35,6 +36,9 @@ function FormStatus({
 }
 
 export function ProfileForm({ user }: ProfileFormProps) {
+  // --- 2. Get the 'update' function from useSession ---
+  const { update: updateSession } = useSession();
+
   // States for the profile info form
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
@@ -53,12 +57,23 @@ export function ProfileForm({ user }: ProfileFormProps) {
     const formData = new FormData(e.currentTarget);
 
     startProfileTransition(async () => {
+      // Call the server action
       const result = await updateUserProfile(formData);
-      if (result.success) {
+
+      // --- 3. Call updateSession on success ---
+      if (result.success && result.user) {
         setProfileSuccess(result.message);
+
+        // This triggers the 'jwt' callback with 'trigger: "update"'
+        // and passes the new user data to update the JWT cookie.
+        await updateSession({
+          name: result.user.name,
+          username: result.user.username,
+        });
       } else {
         setProfileError(result.message);
       }
+      // --- End Modification ---
     });
   };
 
@@ -152,7 +167,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
             </p>
           </div>
 
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end gap-3 pt-2">
             {profileSuccess && (
               <FormStatus type="success" message={profileSuccess} />
             )}
@@ -228,7 +243,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-rose-500 focus:outline-none focus:ring-rose-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 sm:text-sm"
               />
             </div>
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-3 pt-2">
               {passwordSuccess && (
                 <FormStatus type="success" message={passwordSuccess} />
               )}

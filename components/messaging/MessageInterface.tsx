@@ -75,7 +75,7 @@ export default function MessageInterface({
               {/* Avatar (Show if not sender) */}
               {!isSender && (
                 <Image
-                  src={message.sender.image || '/default-avatar.png'} // You'll need a default avatar
+                  src={message.sender.image || '/default-avatar.jpg'} // You'll need a default avatar
                   alt={message.sender.name || 'Avatar'}
                   width={40}
                   height={40}

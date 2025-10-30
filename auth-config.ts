@@ -12,7 +12,6 @@ function isRole(value: unknown): value is Role {
 }
 
 export const authConfig = {
-  // We use JWT strategy for Credentials provider
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/login',
@@ -33,14 +32,12 @@ export const authConfig = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        // Fix for 'unknown' type: Add type-checking
         if (
           typeof credentials.email !== 'string' ||
           typeof credentials.password !== 'string'
         ) {
           return null;
         }
-
         const email = credentials.email;
         const password = credentials.password;
 
@@ -48,16 +45,13 @@ export const authConfig = {
           where: { email: email },
         });
 
-        // Check if user exists and has a password (social accounts won't)
         if (!user || !user.password) {
           return null;
         }
 
-        // Compare hashed password
         const passwordsMatch = await bcrypt.compare(password, user.password);
 
         if (passwordsMatch) {
-          // Return the full user object to be used in callbacks
           return {
             id: user.id,
             name: user.name,
@@ -67,48 +61,75 @@ export const authConfig = {
             username: user.username,
           };
         }
-
-        // If password doesn't match
         return null;
       },
     }),
   ],
   callbacks: {
     /**
-     * The 'user' object is only passed on initial sign-in.
-     * This callback populates the JWT.
+     * The 'user' object is passed on initial sign-in.
+     * The 'trigger' and 'session' objects are passed on update().
      */
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // 1. On initial sign-in (when 'user' object is present)
       if (user) {
-        // On sign-in, user object is available.
         token.id = user.id;
         token.role = user.role;
         token.username = user.username;
+        token.name = user.name;
+        token.email = user.email;
+        token.image = user.image;
       }
+
+      // 2. On session update (e.g., user updates profile)
+      if (trigger === 'update' && session) {
+        // 'session' contains the data passed to update()
+        if (session.name) {
+          token.name = session.name as string;
+        }
+        if (session.username) {
+          token.username = session.username as string;
+        }
+      }
+
       return token;
     },
+
     /**
-     * The session callback uses the token to build the session object
-     * that is returned to the client.
+     * The session callback maps data from the JWT (token)
+     * to the client-side session object.
      */
     async session({ session, token }) {
-      // Fix for 'unknown' types: Add safe type-checking
       if (session.user) {
+        // --- THIS IS THE FIX ---
+        // We must safely check the types of the token properties
+        
         if (typeof token.id === 'string') {
           session.user.id = token.id;
         }
+        
+        if (typeof token.email === 'string') {
+          session.user.email = token.email;
+        }
+        
+        if (typeof token.name === 'string' || token.name === null) {
+          session.user.name = token.name;
+        }
 
+        if (typeof token.image === 'string' || token.image === null) {
+          session.user.image = token.image;
+        }
+        
         if (typeof token.username === 'string' || token.username === null) {
           session.user.username = token.username;
         }
-
-        // Ensure role is a valid Role enum value
+        
         if (isRole(token.role)) {
           session.user.role = token.role;
         } else {
-          // Default to USER if token role is invalid
-          session.user.role = Role.USER;
+          session.user.role = Role.USER; // Default fallback
         }
+        // --- END OF FIX ---
       }
       return session;
     },
