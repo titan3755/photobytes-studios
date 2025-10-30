@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Enums ---
+
+enum Role {
+  USER
+  ADMIN
+  BLOGGER
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// --- Models ---
+
+model User {
+  id                 String               @id @default(cuid())
+  name               String?
+  username           String?              @unique
+  email              String?              @unique
+  emailVerified      DateTime?
+  password           String?
+  image              String?
+  role               Role                 @default(USER)
+  createdAt          DateTime             @default(now())
+  canComment         Boolean              @default(true)
+  
+  accounts           Account[]
+  sessions           Session[]
+  articles           Article[]
+  bloggerApplication BloggerApplication?
+  userNotifications  UserNotification[]
+  comments           Comment[]
+  orders             Order[] // Relation to user's orders
+  messages           Message[] // Relation to user's sent messages
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Article {
+  id            String     @id @default(cuid())
+  title         String
+  slug          String     @unique
+  content       String     @db.Text
+  excerpt       String?
+  featuredImage String?
+  published     Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  authorId      String
+  author        User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  categories    Category[]
+  comments      Comment[]
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  articles Article[]
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
+  ipAddress String?
+}
+
+model BloggerApplication {
+  id        String            @id @default(cuid())
+  userId    String            @unique
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason    String            @db.Text
+  topics    String            @db.Text
+  sampleUrl String?
+  status    ApplicationStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model Notification {
+  id                String             @id @default(cuid())
+  title             String
+  description       String
+  url               String?
+  createdAt         DateTime           @default(now())
+  
+  userNotifications UserNotification[]
+}
+
+model UserNotification {
+  id             String       @id @default(cuid())
+  isRead         Boolean      @default(false)
+
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationId])
+  @@index([userId]) // Add index for faster lookups
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation to User (Author)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Relation to Article
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([articleId])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  category    String
+  description String      @db.Text
+  budget      String?
+  deadline    String?
+  
+  status      OrderStatus @default(PENDING)
+  
+  // Relation to User (Client)
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  messages    Message[] // Relation to messages
+  
+  @@index([authorId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  content   String   @db.Text
+
+  // Relation to Order
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  // Relation to Sender (User)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  // Read status
+  isReadByUser  Boolean @default(false)
+  isReadByAdmin Boolean @default(false)
+
+  @@index([orderId])
+  @@index([senderId])
+}
