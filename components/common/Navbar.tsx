@@ -5,39 +5,89 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, ChevronDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useSession, signOut } from 'next-auth/react'; // Import auth hooks
 
 function classNames(...classes: string[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
+// --- Helper component for Avatar ---
+function getInitials(name?: string | null): string {
+  if (!name) return '?';
+  const names = name.split(' ');
+  if (names.length === 1) return names[0].charAt(0).toUpperCase();
+  return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+}
+
+function UserAvatar({
+  user,
+  size = 'small',
+}: {
+  user: { name?: string | null; image?: string | null };
+  size?: 'small' | 'medium';
+}) {
+  const sizeClasses = size === 'small' ? 'h-8 w-8' : 'h-10 w-10';
+  const textSize = size === 'small' ? 'text-sm' : 'text-base';
+
+  if (user.image) {
+    return (
+      <img
+        className={`${sizeClasses} rounded-full object-cover`}
+        src={user.image}
+        alt={user.name || 'User avatar'}
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+  return (
+    <div
+      className={`flex items-center justify-center rounded-full bg-rose-500 font-semibold text-white ${sizeClasses} ${textSize}`}
+    >
+      {getInitials(user.name)}
+    </div>
+  );
+}
+// --- End Helper ---
+
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false); // State for the new dropdown
+  const [navDropdownOpen, setNavDropdownOpen] = useState(false); // For "More" dropdown
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false); // For User dropdown
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const dropdownRef = useRef<HTMLDivElement>(null); // Ref for dropdown click outside
+  const { data: session, status } = useSession(); // Get auth session
+  const isAuthenticated = status === 'authenticated';
+
+  const navDropdownRef = useRef<HTMLDivElement>(null); // Ref for "More" dropdown
+  const userDropdownRef = useRef<HTMLDivElement>(null); // Ref for User dropdown
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // --- Effect to handle clicking outside the dropdown ---
+  // --- Effect to handle clicking outside dropdowns ---
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        navDropdownRef.current &&
+        !navDropdownRef.current.contains(event.target as Node)
       ) {
-        setDropdownOpen(false);
+        setNavDropdownOpen(false);
+      }
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(event.target as Node)
+      ) {
+        setUserDropdownOpen(false);
       }
     }
-    if (dropdownOpen) {
+    if (navDropdownOpen || userDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [dropdownOpen]);
+  }, [navDropdownOpen, userDropdownOpen]);
 
   const renderThemeToggle = () => {
     if (!mounted) {
@@ -79,6 +129,15 @@ export default function Navbar() {
       </button>
     );
   };
+
+  // --- Auth Section Placeholder ---
+  const authPlaceholder = (
+    <>
+      <div className="ml-4 h-9 w-9 p-2" />
+      <div className="ml-4 h-9 w-20 rounded-md bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+      <div className="ml-4 h-9 w-24 rounded-md bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+    </>
+  );
 
   return (
     <>
@@ -148,30 +207,30 @@ export default function Navbar() {
               </Link>
 
               {/* --- START: More Dropdown --- */}
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative" ref={navDropdownRef}>
                 <button
                   type="button"
                   className="inline-flex items-center gap-x-1 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  onClick={() => setNavDropdownOpen(!navDropdownOpen)}
                 >
                   <span>More</span>
                   <ChevronDown
                     className={classNames(
-                      dropdownOpen ? 'transform rotate-180' : '',
+                      navDropdownOpen ? 'transform rotate-180' : '',
                       'h-5 w-5 transition-transform duration-200',
                     )}
                     aria-hidden="true"
                   />
                 </button>
 
-                {dropdownOpen && (
+                {navDropdownOpen && (
                   <div className="absolute -ml-4 mt-3 w-60 transform px-2 sm:px-0 lg:ml-0 lg:left-1/2 lg:-translate-x-1/2">
                     <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden">
                       <div className="relative grid gap-6 bg-white dark:bg-gray-800 px-5 py-6 sm:gap-8 sm:p-8">
                         <Link
                           href="/portfolio"
                           className="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                          onClick={() => setDropdownOpen(false)}
+                          onClick={() => setNavDropdownOpen(false)}
                         >
                           <div className="ml-4">
                             <p className="text-base font-medium text-gray-900 dark:text-white">
@@ -187,7 +246,7 @@ export default function Navbar() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                          onClick={() => setDropdownOpen(false)}
+                          onClick={() => setNavDropdownOpen(false)}
                         >
                           <div className="ml-4">
                             <p className="text-base font-medium text-gray-900 dark:text-white">
@@ -201,7 +260,7 @@ export default function Navbar() {
                         <Link
                           href="/services"
                           className="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                          onClick={() => setDropdownOpen(false)}
+                          onClick={() => setNavDropdownOpen(false)}
                         >
                           <div className="ml-4">
                             <p className="text-base font-medium text-gray-900 dark:text-white">
@@ -222,19 +281,84 @@ export default function Navbar() {
 
             {/* --- Auth Section (Desktop) --- */}
             <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
-              {renderThemeToggle()}
-              <Link
-                href="/login"
-                className="ml-4 whitespace-nowrap text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="ml-8 whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-rose-600 hover:bg-rose-700"
-              >
-                Register
-              </Link>
+              {status === 'loading' || !mounted ? (
+                authPlaceholder
+              ) : isAuthenticated ? (
+                // --- Logged IN UI (Desktop) ---
+                <>
+                  {renderThemeToggle()}
+                  <div className="relative ml-4" ref={userDropdownRef}>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-x-2.5 rounded-md bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                    >
+                      <UserAvatar user={session.user} size="small" />
+                      <span className="truncate max-w-[150px]">
+                        {session.user.username || session.user.name}
+                      </span>
+                      <ChevronDown className="-mr-0.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    </button>
+
+                    {userDropdownOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-64 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <div className="py-1">
+                          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                            <div className="flex items-center space-x-3">
+                              <div className="shrink-0">
+                                <UserAvatar user={session.user} size="medium" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                  {session.user.name || session.user.username}
+                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                                  {session.user.email}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <Link
+                            href="/dashboard"
+                            className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            onClick={() => setUserDropdownOpen(false)}
+                          >
+                            Dashboard
+                          </Link>
+                          {/* Add other links like Profile here if needed */}
+                          <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                          <button
+                            onClick={() => {
+                              setUserDropdownOpen(false);
+                              signOut();
+                            }}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            Logout
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                // --- Logged OUT UI (Desktop) ---
+                <>
+                  {renderThemeToggle()}
+                  <Link
+                    href="/login"
+                    className="ml-4 whitespace-nowrap text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="ml-8 whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-rose-600 hover:bg-rose-700"
+                  >
+                    Register
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -318,8 +442,6 @@ export default function Navbar() {
                 >
                   Order
                 </Link>
-
-                {/* --- START: Mobile More Links --- */}
                 <Link
                   href="/portfolio"
                   className="text-base font-medium text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300"
@@ -343,29 +465,57 @@ export default function Navbar() {
                 >
                   Services
                 </Link>
-                {/* --- END: Mobile More Links --- */}
 
                 {renderMobileThemeToggle()}
               </div>
 
+              {/* --- Mobile Auth Section --- */}
               <div className="space-y-4">
-                <Link
-                  href="/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-rose-600 hover:bg-rose-700"
-                >
-                  Register
-                </Link>
-                <p className="mt-6 text-center text-base font-medium text-gray-500 dark:text-gray-400">
-                  Existing customer?{' '}
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-rose-600 hover:text-rose-500 dark:text-rose-400 dark:hover:text-rose-300"
-                  >
-                    Login
-                  </Link>
-                </p>
+                {isAuthenticated ? (
+                  // --- Logged IN UI (Mobile) ---
+                  <>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-rose-600 hover:bg-rose-700"
+                    >
+                      Dashboard
+                    </Link>
+                    <p className="mt-6 text-center text-base font-medium text-gray-500 dark:text-gray-400">
+                      Welcome, {session.user.username}!{' '}
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          signOut();
+                        }}
+                        className="text-rose-600 hover:text-rose-500 dark:text-rose-400 dark:hover:text-rose-300"
+                      >
+                        Logout
+                      </button>
+                    </p>
+                  </>
+                ) : (
+                  // --- Logged OUT UI (Mobile) ---
+                  <>
+                    <Link
+                      href="/register"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-rose-600 hover:bg-rose-700"
+                    >
+                      Register
+                    </Link>
+                    <p className="mt-6 text-center text-base font-medium text-gray-500 dark:text-gray-400">
+                      Existing customer?{' '}
+                      <Link
+                        href="/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="text-rose-600 hover:text-rose-500 dark:text-rose-400 dark:hover:text-rose-300"
+                      >
+                        Login
+                      </Link>
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>

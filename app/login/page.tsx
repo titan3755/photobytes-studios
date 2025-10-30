@@ -1,10 +1,57 @@
-import Image from 'next/image';
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const handleCredentialsLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Use signIn from next-auth/react for 'credentials'
+      const result = await signIn('credentials', {
+        redirect: false, // Don't redirect automatically, handle it manually
+        email: email,
+        password: password,
+      });
+
+      if (result?.error) {
+        // Handle login errors
+        setError('Invalid email or password. Please try again.');
+        setIsLoading(false);
+      } else if (result?.ok) {
+        // On success, redirect to the homepage
+        router.push('/');
+        router.refresh(); // Refresh to update navbar state
+      }
+    } catch (err) {
+      console.error(err);
+      setError('An unexpected error occurred. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  // Handle social logins
+  const handleSocialLogin = (provider: 'google' | 'facebook') => {
+    setIsLoading(true);
+    signIn(provider, {
+      callbackUrl: '/', // Redirect to homepage on success
+    });
+  };
+
   return (
-    <div className="flex min-h-[calc(100vh-128px)] flex-col justify-center bg-gray-50 dark:bg-gray-900 py-12 sm:px-6 lg:px-8">
-      {/* 128px is a rough estimate for navbar + footer height, adjust if needed */}
+    <div className="flex min-h-[calc(100vh-160px)] flex-col justify-center bg-gray-50 dark:bg-gray-900 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center">
           <Image
@@ -31,8 +78,19 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
-          {/* Visual-only form */}
-          <form className="space-y-6">
+          {/* Error Message */}
+          {error && (
+            <div
+              className="mb-4 rounded-md border border-red-400 bg-red-50 p-3 dark:bg-red-900/50"
+              role="alert"
+            >
+              <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                {error}
+              </p>
+            </div>
+          )}
+
+          <form onSubmit={handleCredentialsLogin} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
@@ -48,6 +106,8 @@ export default function LoginPage() {
                   autoComplete="email"
                   placeholder="you@example.com"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="block w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-rose-500 focus:outline-none focus:ring-rose-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 dark:focus:border-rose-400 dark:focus:ring-rose-400 sm:text-sm"
                 />
               </div>
@@ -68,49 +128,25 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   placeholder="••••••••"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="block w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-rose-500 focus:outline-none focus:ring-rose-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 dark:focus:border-rose-400 dark:focus:ring-rose-400 sm:text-sm"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-500 dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-rose-400"
-                />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-900 dark:text-gray-300"
-                >
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-medium text-rose-600 hover:text-rose-500 dark:text-rose-400 dark:hover:text-rose-300"
-                >
-                  Forgot your password?
-                </a>
-              </div>
-            </div>
-
             <div>
               <button
-                type="button"
-                disabled
+                type="submit"
+                disabled={isLoading}
                 className="flex w-full justify-center rounded-md border border-transparent bg-rose-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-offset-gray-800"
               >
-                Sign in (Logic Disabled)
+                {isLoading ? 'Signing In...' : 'Sign in'}
               </button>
             </div>
           </form>
 
-          {/* Divider and social login placeholders */}
+          {/* Divider and social login */}
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -127,11 +163,11 @@ export default function LoginPage() {
               <div>
                 <button
                   type="button"
-                  disabled
+                  onClick={() => handleSocialLogin('google')}
+                  disabled={isLoading}
                   className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
                   <span className="sr-only">Sign in with Google</span>
-                  {/* Placeholder SVG for Google */}
                   <svg
                     className="h-5 w-5"
                     fill="currentColor"
@@ -149,11 +185,11 @@ export default function LoginPage() {
               <div>
                 <button
                   type="button"
-                  disabled
+                  onClick={() => handleSocialLogin('facebook')}
+                  disabled={isLoading}
                   className="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 >
                   <span className="sr-only">Sign in with Facebook</span>
-                  {/* Placeholder SVG for Facebook */}
                   <svg
                     className="h-5 w-5"
                     fill="currentColor"
