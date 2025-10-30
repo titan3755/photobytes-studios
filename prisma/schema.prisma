@@ -216,3 +216,14 @@ model Message {
   @@index([orderId])
   @@index([senderId])
 }
+
+model PortfolioItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  category    String // e.g., "Web Design", "GFX", "Motion GFX"
+  imgUrl      String
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+}
