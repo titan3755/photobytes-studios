@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { registerUser } from '@/app/actions/authActions'; // Import Server Action
-import { signIn } from 'next-auth/react'; // Import signIn for social auth
+import { registerUser } from '@/app/actions/authActions';
+import { signIn } from 'next-auth/react';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'; // Import the hook
 
 export default function RegisterPage() {
+  const { executeRecaptcha } = useGoogleReCaptcha(); // Get the hook
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,34 +21,46 @@ export default function RegisterPage() {
     setSuccess(null);
     setIsLoading(true);
 
+    if (!executeRecaptcha) {
+      setError('reCAPTCHA not loaded. Please try refreshing.');
+      setIsLoading(false);
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirm-password') as string;
 
-    // --- Client-side validation ---
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       setIsLoading(false);
       return;
     }
-    // --- End validation ---
 
-    // Call the server action
-    const result = await registerUser(formData);
+    try {
+      // 1. Get the reCAPTCHA token
+      const token = await executeRecaptcha('register');
+      // 2. Append it to your form data
+      formData.append('recaptchaToken', token);
 
-    if (result.success) {
-      setSuccess(result.message);
-      // Redirect to login page after a short delay
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
-    } else {
-      setError(result.message);
+      // 3. Call the server action
+      const result = await registerUser(formData);
+
+      if (result.success) {
+        setSuccess(result.message);
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+      } else {
+        setError(result.message);
+        setIsLoading(false);
+      }
+    } catch (err) {
+      setError('An error occurred during verification. Please try again.');
       setIsLoading(false);
     }
   };
 
-  // Handle social logins
   const handleSocialLogin = (provider: 'google' | 'facebook') => {
     setIsLoading(true);
     signIn(provider, {
@@ -56,6 +70,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-160px)] flex-col justify-center bg-gray-50 dark:bg-gray-900 py-12 sm:px-6 lg:px-8">
+      {/* ... (rest of your JSX is identical) ... */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center">
           <Image
@@ -106,6 +121,7 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* ... (all your inputs: username, email, password, confirm) ... */}
             <div>
               <label
                 htmlFor="username"
@@ -198,7 +214,7 @@ export default function RegisterPage() {
             </div>
           </form>
 
-          {/* --- START: Divider and social login --- */}
+          {/* ... (your social login buttons) ... */}
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -228,7 +244,7 @@ export default function RegisterPage() {
                   >
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.ch" />
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
                 </button>
@@ -258,7 +274,6 @@ export default function RegisterPage() {
               </div>
             </div>
           </div>
-          {/* --- END: Divider and social login --- */}
         </div>
       </div>
     </div>

@@ -14,19 +14,39 @@ const registerSchema = z.object({
 export async function registerUser(formData: FormData) {
   try {
     const data = Object.fromEntries(formData.entries());
+    
+    // --- 1. Verify reCAPTCHA token ---
+    const token = formData.get('recaptchaToken') as string;
+    if (!token) {
+      return { success: false, message: 'reCAPTCHA token missing.' };
+    }
 
-    // 1. Validate the form data
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`;
+    
+    const recaptchaResponse = await fetch(verifyUrl, { method: 'POST' });
+    const recaptchaData = await recaptchaResponse.json();
+
+    if (!recaptchaData.success) {
+      return { success: false, message: 'reCAPTCHA verification failed.' };
+    }
+
+    // Optional: Check the score. 0.5 is a common threshold for v3.
+    if (recaptchaData.score < 0.5) {
+      return { success: false, message: 'Bot-like behavior detected. Please try again.' };
+    }
+    // --- End reCAPTCHA verification ---
+
+
+    // 2. Validate the form data
     const validated = registerSchema.safeParse(data);
     if (!validated.success) {
-      // --- THIS IS THE FIX ---
-      // Use .issues[0].message instead of .errors[0].message
       return { success: false, message: validated.error.issues[0].message };
-      // --- END OF FIX ---
     }
 
     const { email, username, password } = validated.data;
 
-    // 2. Check if user already exists (by email or username)
+    // 3. Check if user already exists (by email or username)
     const existingUserByEmail = await prisma.user.findUnique({
       where: { email },
     });
@@ -40,11 +60,10 @@ export async function registerUser(formData: FormData) {
       return { success: false, message: 'Username is already taken.' };
     }
 
-    // 3. Hash the password
+    // 4. Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4. Create the new user in the database
-    // Your schema automatically defaults 'role' to 'USER'
+    // 5. Create the new user in the database
     await prisma.user.create({
       data: {
         email,
