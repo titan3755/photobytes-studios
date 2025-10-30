@@ -197,6 +197,29 @@ export default async function Footer() {
             </a>
             . All Rights Reserved.
           </span>
+          {/* --- START: Added reCAPTCHA Legal Text --- */}
+            <p className="text-xs text-gray-500 dark:text-gray-400 sm:text-center">
+              This site is protected by reCAPTCHA and the Google{' '}
+              <a
+                href="https://policies.google.com/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-rose-600 hover:text-rose-500"
+              >
+                Privacy Policy
+              </a>{' '}
+              and{' '}
+              <a
+                href="https://policies.google.com/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-rose-600 hover:text-rose-500"
+              >
+                Terms of Service
+              </a>{' '}
+              apply.
+            </p>
+            {/* --- END: Added reCAPTCHA Legal Text --- */}
           <div className="flex space-x-6 sm:justify-center sm:mt-0 mt-4">
             <a
               href="https://www.facebook.com/PhotoBytes999"

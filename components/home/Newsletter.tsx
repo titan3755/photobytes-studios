@@ -111,6 +111,7 @@ export function Newsletter({ userEmail }: { userEmail?: string | null }) {
 
         {success && <FormStatus type="success" message={success} />}
         {error && <FormStatus type="error" message={error} />}
+        
       </div>
     </div>
   );
