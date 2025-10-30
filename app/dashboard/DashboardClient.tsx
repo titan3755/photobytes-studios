@@ -5,10 +5,50 @@ import { type Session } from 'next-auth';
 import Image from 'next/image';
 import Link from 'next/link';
 import { deleteUserAccount } from '@/app/actions/userActions';
-import { Role } from '@prisma/client';
-import { User, Mail, Shield, Edit, Trash2, Loader2 } from 'lucide-react';
+import { OrderStatus, Role } from '@prisma/client'; // Import OrderStatus
+import {
+  User,
+  Mail,
+  Shield,
+  Edit,
+  Trash2,
+  Loader2,
+  ShoppingBag,
+  ArrowRight,
+} from 'lucide-react';
+import { type DashboardOrder } from './page'; // Import the custom type
 
-// Helper component for the user's avatar
+// --- Helper: Order Status Badge ---
+function OrderStatusBadge({ status }: { status: OrderStatus }) {
+  let colors = '';
+  switch (status) {
+    case 'PENDING':
+      colors =
+        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      break;
+    case 'IN_PROGRESS':
+      colors = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      break;
+    case 'COMPLETED':
+      colors =
+        'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      break;
+    case 'CANCELLED':
+      colors = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      break;
+    default:
+      colors = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+  }
+  return (
+    <span
+      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colors}`}
+    >
+      {status.replace('_', ' ')}
+    </span>
+  );
+}
+
+// --- Helper component for the user's avatar ---
 function UserAvatar({
   user,
 }: {
@@ -26,7 +66,7 @@ function UserAvatar({
       />
     );
   }
-  
+
   // Fallback initials
   const initials = user.name
     ? (user.name.split(' ')[0][0] + (user.name.split(' ')[1]?.[0] || ''))
@@ -64,10 +104,13 @@ function InfoRow({
   );
 }
 
+// --- MAIN COMPONENT ---
 export default function DashboardClient({
   user,
+  orders, // Add orders prop
 }: {
   user: Session['user'];
+  orders: DashboardOrder[]; // Use the imported type
 }) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -101,13 +144,67 @@ export default function DashboardClient({
         </div>
         <div className="px-8 pt-16 pb-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {user.name || 'Welcome'}
+            {user.name ? `Welcome, ${user.name}` : 'Welcome'}
           </h2>
           <p className="text-base text-gray-500 dark:text-gray-400">
             Welcome to your dashboard.
           </p>
         </div>
       </div>
+
+      {/* --- START: Your Orders Card --- */}
+      <div className="rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            Your Recent Orders
+          </h3>
+          <Link
+            href="/order"
+            className="inline-flex items-center gap-x-2 rounded-md bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition-colors"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            New Order
+          </Link>
+        </div>
+        <div className="p-6">
+          {orders.length > 0 ? (
+            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+              {orders.map((order) => (
+                <li
+                  key={order.id}
+                  className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {order.category}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-md">
+                      {order.description}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Ordered on {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="mt-2 sm:mt-0 sm:ml-4 shrink-0">
+                    <OrderStatusBadge status={order.status} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-center py-8">
+              <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto" />
+              <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">
+                No orders found
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                You haven&apos;t placed any orders yet.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+      {/* --- END: Your Orders Card --- */}
 
       {/* --- Account Details Card --- */}
       <div className="rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700">
