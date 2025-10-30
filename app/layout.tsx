@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   description: 'The blog website of PhotoBytes Studios',
 };
 
+
 export default function RootLayout({
   children,
 }: Readonly<{
